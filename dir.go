@@ -1,3 +1,9 @@
+// Implementation of file handling as per the XDG specification
+//
+// This is a simple (mostly experimentation) for me to play with go. This
+// package will ideally help file handling as per the XDG specification.
+// This specification allows the user to override where an application
+// will store data files and such
 package xdg
 
 import (
