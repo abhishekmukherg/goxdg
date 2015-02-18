@@ -79,6 +79,9 @@ func (dp DirPath) runFirstFilename(name string, action func(string) interface{})
 }
 
 func (dp DirPath) MkdirAll(name string, perm os.FileMode) (dirname string, err error) {
+	if name == "" {
+		return "", os.MkdirAll("", perm)
+	}
 	dirname, errInt := dp.runFirstFilename(name, func(fullName string) interface{} {
 		return os.MkdirAll(fullName, perm)
 	})
@@ -89,6 +92,9 @@ func (dp DirPath) MkdirAll(name string, perm os.FileMode) (dirname string, err e
 }
 
 func (dp DirPath) Mkdir(name string, perm os.FileMode) (dirname string, err error) {
+	if name == "" {
+		return "", os.Mkdir("", perm)
+	}
 	dirname, errInt := dp.runFirstFilename(name, func(fullName string) interface{} {
 		return os.Mkdir(fullName, perm)
 	})

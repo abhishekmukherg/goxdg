@@ -9,7 +9,7 @@ import (
 	"gopkg.in/check.v1"
 )
 
-type Suite struct {
+type TempDirSuite struct {
 	tempDir                            string
 	m                                  mockEnv
 	fileInHome, fileInLocal, fileInLib *os.File
@@ -17,9 +17,9 @@ type Suite struct {
 
 func Test(t *testing.T) { check.TestingT(t) }
 
-var _ = check.Suite(&Suite{})
+var _ = check.Suite(&TempDirSuite{})
 
-func (s *Suite) SetUpTest(c *check.C) {
+func (s *TempDirSuite) SetUpTest(c *check.C) {
 	s.tempDir = c.MkDir()
 
 	dataDirs := []string{filepath.Join(s.tempDir, "local"), filepath.Join(s.tempDir, "lib")}
@@ -57,7 +57,7 @@ func (s *Suite) SetUpTest(c *check.C) {
 
 }
 
-func (s *Suite) TestOpen2(c *check.C) {
+func (s *TempDirSuite) TestOpen(c *check.C) {
 	readEnv := Data.fromEnvironment(s.m.Getenv)
 	runTest := func(filename string, expected *os.File) {
 		openedFile, err := readEnv.Open(filename)
@@ -76,4 +76,41 @@ func (s *Suite) TestOpen2(c *check.C) {
 	if err == nil {
 		c.Errorf("Found a file that doesn't exist?", openedFile.Name())
 	}
+}
+
+func (s *TempDirSuite) TestMkdir(c *check.C) {
+	readEnv := Data.fromEnvironment(s.m.Getenv)
+	dirname, err := readEnv.Mkdir("asdf", 0700)
+
+	c.Assert(err, check.IsNil) // Should be able to readEnv.Mkdir("asdf")
+	if dirname != filepath.Join(s.m["XDG_DATA_HOME"], "asdf") {
+		c.Error("Apparently made the wrong dir:", dirname)
+	}
+}
+
+func (s *TempDirSuite) TestMkdirBlank(c *check.C) {
+	readEnv := Data.fromEnvironment(s.m.Getenv)
+	dirname, err := readEnv.Mkdir("", 0700)
+	// Should fail to create directory with Mkdir("")
+	c.Assert(err, check.FitsTypeOf, &os.PathError{})
+	// Should say no such file or directory when name blank to match os.Mkdir
+	c.Assert(err, check.ErrorMatches, "mkdir : no such file or directory")
+	c.Assert(dirname, check.Equals, "")
+
+	dirname, err = readEnv.MkdirAll("", 0700)
+	// Should fail to create directory with MkdirAll("")
+	c.Assert(err, check.FitsTypeOf, &os.PathError{})
+	// Should say no such file or directory when name blank to match os.MkdirAll
+	c.Assert(err, check.ErrorMatches, "mkdir : no such file or directory")
+	c.Assert(dirname, check.Equals, "")
+}
+
+func (s *TempDirSuite) TestMkdirAll(c *check.C) {
+	readEnv := Data.fromEnvironment(s.m.Getenv)
+	dirname, err := readEnv.MkdirAll("asdf/qwerty", 0700)
+
+	c.Assert(err, check.IsNil) // Failed to create dir with MkdirAll
+
+	// Check if we created the correct directory
+	c.Assert(dirname, check.Equals, filepath.Join(s.m["XDG_DATA_HOME"], "asdf/qwerty"))
 }
